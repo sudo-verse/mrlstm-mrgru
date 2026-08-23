@@ -1,0 +1,93 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 940 300" font-family="DejaVu Sans, Helvetica, sans-serif">
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#898781"/>
+    </marker>
+    <marker id="ao" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#eb6834"/>
+    </marker>
+  </defs>
+
+  <rect width="940" height="300" fill="#fcfcfb"/>
+
+  <!-- ===== changed region ===== -->
+  <rect x="8" y="30" width="316" height="238" rx="4" fill="#fdf1ea" stroke="#eb6834" stroke-width="1.2"/>
+  <text x="18" y="50" font-size="11" font-weight="bold" fill="#eb6834">CHANGED — encoder stage</text>
+
+  <!-- ===== unchanged region ===== -->
+  <rect x="352" y="30" width="580" height="238" rx="4" fill="#f9f9f7" stroke="#c3c2b7" stroke-width="1.2" stroke-dasharray="5 4"/>
+  <text x="362" y="50" font-size="11" font-weight="bold" fill="#52514e">UNCHANGED — imported from MRINN</text>
+
+  <!-- inputs -->
+  <text x="18" y="76" font-size="10.5" font-weight="bold" fill="#0b0b0b">17 market signals</text>
+  <g font-size="9" fill="#52514e">
+    <rect x="18" y="86" width="120" height="21" rx="3" fill="#fff" stroke="#c3c2b7"/>
+    <text x="26" y="100">system_imbalance</text>
+    <rect x="18" y="112" width="120" height="21" rx="3" fill="#fff" stroke="#c3c2b7"/>
+    <text x="26" y="126">E/P_aFRR, mFRR …</text>
+    <rect x="18" y="138" width="120" height="21" rx="3" fill="#fff" stroke="#c3c2b7"/>
+    <text x="26" y="152">P_ID15 / ID60 / DA</text>
+    <rect x="18" y="164" width="120" height="21" rx="3" fill="#fff" stroke="#c3c2b7"/>
+    <text x="26" y="178">L_ID15 / L_ID60</text>
+  </g>
+  <text x="18" y="205" font-size="9" fill="#898781">each shaped (N, T, 1)</text>
+  <text x="18" y="219" font-size="9" fill="#898781">oldest timestep first</text>
+
+  <!-- encoder -->
+  <path d="M144 135 L172 135" stroke="#eb6834" stroke-width="1.6" marker-end="url(#ao)"/>
+  <rect x="176" y="96" width="132" height="78" rx="4" fill="#eb6834"/>
+  <text x="242" y="122" font-size="11.5" font-weight="bold" fill="#fff" text-anchor="middle">LSTM  or  GRU</text>
+  <text x="242" y="139" font-size="9" fill="#fff" text-anchor="middle" opacity=".92">per signal, independent</text>
+  <text x="242" y="154" font-size="9" fill="#fff" text-anchor="middle" opacity=".92">1 layer, H = 8</text>
+  <text x="242" y="192" font-size="9" fill="#52514e" text-anchor="middle">MRINN had: Dense ×2</text>
+  <text x="242" y="205" font-size="9" fill="#52514e" text-anchor="middle">over a flat (T,) vector</text>
+
+  <!-- h_f -->
+  <path d="M312 135 L344 135" stroke="#eb6834" stroke-width="1.6" marker-end="url(#ao)"/>
+  <text x="330" y="126" font-size="9" fill="#898781" text-anchor="middle">h (N,H)</text>
+
+  <!-- rule blocks -->
+  <g>
+    <rect x="368" y="70" width="150" height="46" rx="4" fill="#fff" stroke="#2a78d6" stroke-width="1.4"/>
+    <text x="443" y="88" font-size="10" font-weight="bold" fill="#0b0b0b" text-anchor="middle">get_P_RE</text>
+    <text x="443" y="104" font-size="8.5" fill="#52514e" text-anchor="middle">balancing energy · Eq 2–6</text>
+
+    <rect x="368" y="124" width="150" height="46" rx="4" fill="#fff" stroke="#2a78d6" stroke-width="1.4"/>
+    <text x="443" y="142" font-size="10" font-weight="bold" fill="#0b0b0b" text-anchor="middle">get_P_EX</text>
+    <text x="443" y="158" font-size="8.5" fill="#52514e" text-anchor="middle">market reference · Eq 7–14</text>
+
+    <rect x="368" y="178" width="150" height="46" rx="4" fill="#fff" stroke="#2a78d6" stroke-width="1.4"/>
+    <text x="443" y="196" font-size="10" font-weight="bold" fill="#0b0b0b" text-anchor="middle">get_P_SC</text>
+    <text x="443" y="212" font-size="8.5" fill="#52514e" text-anchor="middle">scarcity · Eq 15</text>
+  </g>
+
+  <!-- P_base link -->
+  <path d="M528 147 L546 147 L546 201 L528 201" stroke="#c3c2b7" stroke-width="1.1" fill="none"/>
+  <text x="574" y="196" font-size="8" fill="#898781">P_base</text>
+
+  <!-- combine -->
+  <path d="M522 93 L596 122" stroke="#898781" stroke-width="1.2" marker-end="url(#a)" fill="none"/>
+  <path d="M522 147 L596 143" stroke="#898781" stroke-width="1.2" marker-end="url(#a)" fill="none"/>
+  <path d="M522 201 L596 164" stroke="#898781" stroke-width="1.2" marker-end="url(#a)" fill="none"/>
+
+  <rect x="600" y="112" width="126" height="62" rx="4" fill="#fff" stroke="#2a78d6" stroke-width="1.4"/>
+  <text x="663" y="132" font-size="10" font-weight="bold" fill="#0b0b0b" text-anchor="middle">smooth min / max</text>
+  <text x="663" y="147" font-size="8.5" fill="#52514e" text-anchor="middle">+ final_gate softmax</text>
+  <text x="663" y="163" font-size="8.5" fill="#52514e" text-anchor="middle">Eq 1</text>
+
+  <!-- head -->
+  <path d="M730 143 L756 143" stroke="#898781" stroke-width="1.2" marker-end="url(#a)"/>
+  <rect x="760" y="106" width="156" height="74" rx="4" fill="#2a78d6"/>
+  <text x="838" y="127" font-size="10" font-weight="bold" fill="#fff" text-anchor="middle">Hierarchical</text>
+  <text x="838" y="141" font-size="10" font-weight="bold" fill="#fff" text-anchor="middle">quantile head</text>
+  <text x="838" y="157" font-size="8.5" fill="#fff" text-anchor="middle" opacity=".92">median ± softplus residuals</text>
+  <text x="838" y="171" font-size="8.5" fill="#fff" text-anchor="middle" opacity=".92">⇒ AQCR = 0 by construction</text>
+
+  <text x="838" y="199" font-size="9.5" fill="#0b0b0b" text-anchor="middle" font-weight="bold">output (N, Q=5)</text>
+
+  <!-- footer note -->
+  <text x="368" y="248" font-size="9" fill="#52514e">Rule blocks consume the 17 vectors </text>
+  <text x="596" y="248" font-size="9" fill="#0b0b0b" font-weight="bold">by position</text>
+  <text x="662" y="248" font-size="9" fill="#52514e">— a permutation trains silently but wrongly.</text>
+  <text x="368" y="262" font-size="9" fill="#52514e">Only 16 encoders carry weights: get_P_EX never consumes L_DA (w_DA is derived by subtraction).</text>
+</svg>

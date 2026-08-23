@@ -1,0 +1,10 @@
+matplotlib==3.7.0
+numpy==1.26.4
+pandas==2.2.2
+scikit-learn==1.5.2
+tensorflow==2.16.2
+
+# Imported by the MRINN checkout but absent from its own requirements.txt:
+# library_imbalance/data.py imports huggingface_hub and holidays at module level.
+huggingface-hub
+holidays

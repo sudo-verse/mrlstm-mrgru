@@ -1,0 +1,25 @@
+# --- MRINN dependency (cloned, not vendored; see README) ---
+external/
+
+# --- data (ships with the MRINN checkout) ---
+Data/*.csv
+
+# --- training artefacts ---
+*.keras
+*.h5
+results/losses/
+results/*.log
+
+# --- python ---
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+.ipynb_checkpoints/
+
+# --- os ---
+.DS_Store
+
+# --- sweep notebook output (run locally) ---
+sweep_results/
