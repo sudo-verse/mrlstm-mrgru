@@ -23,3 +23,4 @@ venv/
 
 # --- sweep notebook output (run locally) ---
 sweep_results/
+data/pricefm_FINAL.csv

@@ -1,0 +1,52 @@
+2026-08-29 21:10:49.771217: I tensorflow/core/util/port.cc:113] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+2026-08-29 21:10:49.771871: I external/local_tsl/tsl/cuda/cudart_stub.cc:32] Could not find cuda drivers on your machine, GPU will not be used.
+2026-08-29 21:10:49.774933: I external/local_tsl/tsl/cuda/cudart_stub.cc:32] Could not find cuda drivers on your machine, GPU will not be used.
+2026-08-29 21:10:49.784261: E external/local_xla/xla/stream_executor/cuda/cuda_fft.cc:479] Unable to register cuFFT factory: Attempting to register factory for plugin cuFFT when one has already been registered
+2026-08-29 21:10:49.803772: E external/local_xla/xla/stream_executor/cuda/cuda_dnn.cc:10575] Unable to register cuDNN factory: Attempting to register factory for plugin cuDNN when one has already been registered
+2026-08-29 21:10:49.803822: E external/local_xla/xla/stream_executor/cuda/cuda_blas.cc:1442] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered
+2026-08-29 21:10:49.815917: I tensorflow/core/platform/cpu_feature_guard.cc:210] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
+To enable the following instructions: AVX2 AVX_VNNI FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
+2026-08-29 21:10:50.477433: W tensorflow/compiler/tf2tensorrt/utils/py_utils.cc:38] TF-TRT Warning: Could not find TensorRT
+models   mrinn, mlp, lqr, mr_gru, gru, mr_lstm, lstm, xgb, attnbilstm
+recipe   T=32 stride=2 batch=256 lr=0.003 epochs<=300 patience=25 da_drop=0.2 seed=42
+gate_closure=True  <- these numbers supersede the leaky runs
+
+2026-08-29 21:11:09.088370: E tensorflow/core/util/util.cc:131] oneDNN supports DT_INT32 only on platforms with AVX-512. Falling back to the default Eigen-based implementation if present.
+  MRINN       roll0  AQL  25.062  MAE  67.61  AQCR  0.00  p   6,135  ep 18/43    3.8 min
+  MRINN       roll1  AQL  42.311  MAE  99.36  AQCR  0.00  p   6,135  ep 36/61    5.2 min
+  MRINN       roll2  AQL  18.647  MAE  49.50  AQCR  0.00  p   6,135  ep 16/41    3.7 min
+  MRINN       roll3  AQL  17.413  MAE  48.79  AQCR  0.00  p   6,135  ep 43/68    5.7 min
+  MLP         roll0  AQL  25.038  MAE  66.24  AQCR  0.00  p   7,533  ep 29/54    3.0 min
+  MLP         roll1  AQL  42.052  MAE  98.68  AQCR  0.00  p   7,533  ep 25/50    2.8 min
+  MLP         roll2  AQL  18.806  MAE  50.23  AQCR  0.00  p   7,533  ep 29/54    3.0 min
+  MLP         roll3  AQL  17.742  MAE  49.89  AQCR  0.00  p   7,533  ep 22/47    2.6 min
+  LQR         roll0  AQL  61.226  MAE 144.21  AQCR 36.99  p 538,080  ep 90/115    1.7 min
+  LQR         roll1  AQL  84.243  MAE 191.94  AQCR 31.55  p 538,080  ep 73/98    1.5 min
+  LQR         roll2  AQL  65.793  MAE 150.77  AQCR 25.87  p 538,080  ep 151/176    2.6 min
+  LQR         roll3  AQL  33.448  MAE  85.90  AQCR  8.93  p 538,080  ep 112/137    2.0 min
+  MR-GRU      roll0  AQL  24.780  MAE  65.00  AQCR  0.00  p   5,055  ep 49/74   12.8 min
+  MR-GRU      roll1  AQL  41.875  MAE  97.82  AQCR  0.00  p   5,055  ep 17/42    7.6 min
+  MR-GRU      roll2  AQL  18.633  MAE  49.48  AQCR  0.00  p   5,055  ep 35/60   10.8 min
+  MR-GRU      roll3  AQL  17.165  MAE  48.07  AQCR  0.00  p   5,055  ep 101/126   22.1 min
+  GRU         roll0  AQL  25.125  MAE  67.34  AQCR  0.00  p   6,309  ep 23/48    8.5 min
+  GRU         roll1  AQL  42.012  MAE  99.38  AQCR  0.00  p   6,309  ep 21/46    8.2 min
+  GRU         roll2  AQL  18.404  MAE  49.37  AQCR  0.00  p   6,309  ep 21/46    8.2 min
+  GRU         roll3  AQL  18.055  MAE  51.44  AQCR  0.00  p   6,309  ep 36/61   10.7 min
+  MR-LSTM     roll0  AQL  24.595  MAE  64.42  AQCR  0.00  p   5,895  ep 64/89   13.8 min
+  MR-LSTM     roll1  AQL  42.167  MAE  98.85  AQCR  0.00  p   5,895  ep 10/35    6.0 min
+  MR-LSTM     roll2  AQL  18.784  MAE  49.69  AQCR  0.00  p   5,895  ep 16/41    7.3 min
+  MR-LSTM     roll3  AQL  17.287  MAE  48.51  AQCR  0.00  p   5,895  ep 42/67   10.4 min
+  LSTM        roll0  AQL  24.843  MAE  67.41  AQCR  0.00  p   7,261  ep 20/45    6.7 min
+  LSTM        roll1  AQL  42.017  MAE  98.00  AQCR  0.00  p   7,261  ep 17/42    6.3 min
+  LSTM        roll2  AQL  18.514  MAE  49.67  AQCR  0.00  p   7,261  ep 21/46    7.0 min
+  LSTM        roll3  AQL  17.763  MAE  50.08  AQCR  0.00  p   7,261  ep 26/51    7.5 min
+  XGBoost     roll0  AQL  25.809  MAE  68.48  AQCR  2.65  p   2,993  ep 0/0   47.6 min
+  XGBoost     roll1  AQL  42.218  MAE  97.71  AQCR  1.36  p   4,247  ep 0/0   57.4 min
+  XGBoost     roll2  AQL  18.751  MAE  49.77  AQCR  1.09  p   3,088  ep 0/0   46.9 min
+  XGBoost     roll3  AQL  18.763  MAE  54.15  AQCR  2.75  p   3,549  ep 0/0   51.6 min
+  AttnBiLSTM  roll0  AQL  25.168  MAE  68.47  AQCR  0.00  p  15,302  ep 14/39   11.8 min
+  AttnBiLSTM  roll1  AQL  42.026  MAE  98.48  AQCR  0.00  p  15,302  ep 13/38   11.7 min
+  AttnBiLSTM  roll2  AQL  18.609  MAE  50.05  AQCR  0.00  p  15,302  ep 32/57   16.9 min
+  AttnBiLSTM  roll3  AQL  17.669  MAE  49.46  AQCR  0.00  p  15,302  ep 49/74   21.6 min
+
+total 7.65 h

@@ -1,0 +1,539 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Day-Ahead Imbalance Price Forecasting — Evaluation Report</title>
+<style>
+@page { size: A4; margin: 17mm 16mm 15mm 16mm; }
+
+:root{
+  --ink:#111820; --body:#1f2a30; --muted:#5a6a70; --line:#c9d2d4; --line-soft:#e2e8e9;
+  --accent:#0d5f6b; --accent-bg:#e8f1f2; --warn:#8f3a22; --shade:#f2f5f5;
+}
+*{box-sizing:border-box}
+html{-webkit-print-color-adjust:exact; print-color-adjust:exact}
+body{
+  font-family:Carlito,"Liberation Sans",Calibri,sans-serif;
+  font-size:9.6pt; line-height:1.45; color:var(--body); background:#fff; margin:0;
+}
+h1,h2,h3{font-family:Caladea,"Liberation Serif",Cambria,Georgia,serif; color:var(--ink)}
+h1{font-size:19pt; line-height:1.15; margin:0 0 4pt; font-weight:700; letter-spacing:-.2pt}
+.sub{font-size:10.5pt; color:var(--muted); margin:0 0 10pt; font-family:Caladea,serif; font-style:italic}
+h2{
+  font-size:12pt; margin:13pt 0 5pt; padding-bottom:2.5pt;
+  border-bottom:.7pt solid var(--line); font-weight:700;
+}
+h2 .n{color:var(--accent); font-family:"Liberation Mono",monospace; font-size:9.5pt; margin-right:5pt}
+h3{font-size:10pt; margin:11pt 0 3pt; font-weight:700}
+p{margin:0 0 6pt}
+ul,ol{margin:0 0 6pt; padding-left:14pt}
+li{margin-bottom:2.5pt}
+strong{color:var(--ink); font-weight:700}
+code,.mono{font-family:"Liberation Mono",monospace; font-size:8.6pt}
+
+/* masthead */
+header{border-bottom:1.6pt solid var(--ink); padding-bottom:8pt; margin-bottom:10pt}
+.meta{
+  display:flex; gap:16pt; flex-wrap:wrap; font-family:"Liberation Mono",monospace;
+  font-size:7.6pt; color:var(--muted); text-transform:uppercase; letter-spacing:.4pt;
+}
+.meta b{color:var(--ink); font-weight:700}
+
+/* abstract */
+.abstract{
+  background:var(--shade); border-left:2.5pt solid var(--accent);
+  padding:8pt 11pt; margin:0 0 4pt; font-size:9.4pt;
+}
+.abstract p:last-child{margin-bottom:0}
+
+/* tables */
+table{border-collapse:collapse; width:100%; font-size:8.7pt; margin:3pt 0 3pt}
+caption{
+  caption-side:bottom; text-align:left; font-size:7.9pt; color:var(--muted);
+  padding-top:3.5pt; line-height:1.4;
+}
+th,td{padding:3.2pt 6pt; text-align:right; border-bottom:.5pt solid var(--line-soft)}
+table.prose td,table.prose th{text-align:left}
+table.grid td:last-child,table.grid th:last-child{text-align:left}
+th:first-child,td:first-child{text-align:left}
+thead th{
+  font-family:"Liberation Mono",monospace; font-size:7.4pt; text-transform:uppercase;
+  letter-spacing:.3pt; color:var(--muted); border-bottom:.8pt solid var(--line);
+  background:var(--shade); font-weight:400;
+}
+tbody td{font-variant-numeric:tabular-nums}
+tbody td:first-child{color:var(--ink); font-weight:600}
+tr.best td{background:var(--accent-bg)}
+tr.best td:first-child{color:var(--accent)}
+tr.ref td{color:var(--muted)}
+tr.ref td:first-child{color:var(--muted); font-weight:400}
+tr.sep td{border-top:.8pt solid var(--line)}
+.g{color:var(--accent); font-weight:700}
+.w{color:var(--warn); font-weight:700}
+
+/* two-column blocks */
+.two{display:grid; grid-template-columns:1fr 1fr; gap:10pt}
+.box{border:.6pt solid var(--line); padding:7pt 9pt; font-size:8.9pt}
+.box .lbl{
+  font-family:"Liberation Mono",monospace; font-size:7.2pt; text-transform:uppercase;
+  letter-spacing:.4pt; color:var(--muted); margin-bottom:3pt;
+}
+.box p:last-child{margin-bottom:0}
+.key{border-left:2.5pt solid var(--accent); background:var(--shade); border:none; padding-left:9pt}
+.caution{border-left:2.5pt solid var(--warn); background:#faf3f1; border:none; padding-left:9pt}
+
+/* findings */
+ol.find{counter-reset:f; list-style:none; padding:0; margin:0}
+ol.find > li{
+  counter-increment:f; position:relative; padding-left:20pt; margin-bottom:7pt;
+}
+ol.find > li::before{
+  content:counter(f); position:absolute; left:0; top:0;
+  font-family:"Liberation Mono",monospace; font-size:9pt; font-weight:700;
+  color:var(--accent); border:.8pt solid var(--accent); width:13pt; height:13pt;
+  display:flex; align-items:center; justify-content:center;
+}
+ol.find > li > b:first-child{display:block; color:var(--ink); font-size:9.7pt; margin-bottom:1pt}
+
+.page-break{page-break-before:always}
+.avoid{page-break-inside:avoid}
+footer{
+  margin-top:12pt; padding-top:5pt; border-top:.6pt solid var(--line);
+  font-size:7.6pt; color:var(--muted); font-family:"Liberation Mono",monospace; line-height:1.5;
+}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Day-Ahead Imbalance Price Forecasting: What Was Tested and What It Shows</h1>
+  <p class="sub">Recurrent encoders and market-rule blocks in a 96-horizon MRINN extension</p>
+  <div class="meta">
+    <span><b>30 August 2026</b></span>
+    <span>Test window <b>2025</b></span>
+    <span>9 models &middot; 4 rolling folds</span>
+    <span>34,521 origins</span>
+    <span>7.7 h CPU</span>
+  </div>
+</header>
+
+<div class="abstract">
+  <p>
+    Nine forecasting models were trained and evaluated under one identical protocol to
+    answer two questions the project had left open: <b>does a recurrent encoder beat
+    MRINN's Dense encoder at a day-ahead horizon</b>, and <b>do the differentiable
+    market-rule blocks contribute anything measurable at all</b>. Four defects in the
+    prior evaluation were found and corrected first, without which no comparison would
+    have been valid. The recurrent-encoder claim is confirmed and now statistically
+    significant; the market-rule claim survives only in combination with the GRU encoder,
+    and is null elsewhere. Section 5 assesses five supervisor suggestions against the same
+    data, and records which hold, which need correction, and which are blocked.
+  </p>
+</div>
+
+<h2><span class="n">1</span>What was tested</h2>
+
+<div class="two">
+  <div class="box">
+    <div class="lbl">Task and data</div>
+    <p>
+      Austrian/German balancing-market imbalance price at 15-minute resolution
+      (<span class="mono">imbalance_data.csv</span>, 140,249 rows, 2022–2026). At each
+      origin the model predicts <b>all 96 horizons</b> — 15 minutes to 24 hours — in a
+      single forward pass. 17 input signals; no lagged price among them.
+    </p>
+  </div>
+  <div class="box">
+    <div class="lbl">Protocol</div>
+    <p>
+      Rolling 12-month training windows retrained quarterly, four folds covering all of
+      2025. Per-fold scalers, inverted per fold before pooling. T = 32 (8 h history),
+      stride 2 on training rows only; batch 256, constant LR with plateau decay, early
+      stopping on validation loss. Single seed (42).
+    </p>
+  </div>
+</div>
+
+<h3>The nine models</h3>
+<p>
+  The design is a <b>2&times;3 grid plus references</b>. Every model shares the data
+  pipeline, horizon embedding, known-future covariate path, day-ahead outage dropout and
+  — except LQR and XGBoost — the hierarchical quantile head. Reading <i>down</i> a column
+  isolates the encoder; reading <i>across</i> a row isolates the market-rule blocks.
+</p>
+
+<table class="avoid grid">
+  <thead><tr><th>Encoder</th><th>With market rules</th><th>Rules removed</th><th>Isolates</th></tr></thead>
+  <tbody>
+    <tr><td>Dense</td><td>MRINN (6,135 p)</td><td>MLP (7,533 p)</td><td rowspan="3" style="text-align:left; color:var(--muted)">Row&nbsp;=&nbsp;value of the rule blocks<br>Column&nbsp;=&nbsp;value of the encoder</td></tr>
+    <tr><td>LSTM</td><td>MR-LSTM (5,895 p)</td><td>LSTM (7,261 p)</td></tr>
+    <tr><td>GRU</td><td>MR-GRU (5,055 p)</td><td>GRU (6,309 p)</td></tr>
+    <tr class="sep"><td>References</td><td colspan="3" style="text-align:left">AttnBiLSTM (15,302 p) &middot; XGBoost (96 boosters/fold) &middot; LQR (linear, ridge) &middot; climatology &middot; seasonal naive</td></tr>
+  </tbody>
+  <caption>Parameter counts are exact. XGBoost has no comparable weight count. LQR and
+  XGBoost deliberately omit the hierarchical quantile head, so that quantile crossing can
+  be observed rather than assumed away.</caption>
+</table>
+
+<h3>Metrics</h3>
+<p>
+  <b>AQL</b> (average pinball loss over q = 0.10, 0.25, 0.50, 0.75, 0.90) is the headline;
+  <b>MAE</b> and <b>RMSE</b> of the median; <b>AQCR</b> (quantile-crossing rate);
+  80% interval coverage. Reported at h = 1 (15 min), h = 4 (1 hour) and h = 96 (1 day),
+  and averaged over all 96.
+</p>
+
+<h2><span class="n">2</span>Four corrections made before any comparison</h2>
+<p>
+  Each of these invalidated or distorted the previous results. They are reported because
+  they change published numbers, not as housekeeping.
+</p>
+
+<table class="prose">
+  <thead><tr><th>Defect</th><th>Measured extent</th><th>Consequence</th></tr></thead>
+  <tbody>
+    <tr>
+      <td>Day-ahead look-ahead leak</td>
+      <td><b>14.95%</b> of day-ahead cells; 54.2% of origins</td>
+      <td>Models consumed prices not yet auctioned. Gate closure now enforced.</td>
+    </tr>
+    <tr>
+      <td>Models never converged</td>
+      <td>Every prior run stopped at the epoch ceiling (119–120 of 120)</td>
+      <td>Batch 1024 gave 18 updates/epoch — 64% of requirement. Now 256.</td>
+    </tr>
+    <tr>
+      <td>Baseline weaker than a constant</td>
+      <td>Seasonal-naive RMSE 547 &asymp; &radic;2 &times; price SD 392</td>
+      <td>"−32% vs naive" overstated. Climatology added as the real reference.</td>
+    </tr>
+    <tr>
+      <td>RMSE averaged across folds</td>
+      <td>321 averaged vs <b>390</b> pooled</td>
+      <td>RMSE is a root of a mean of squares; understated by ~17%.</td>
+    </tr>
+  </tbody>
+  <caption>The leak is structured, not diffuse: zero at horizons below h = 45, rising to
+  54.2% of origins at h = 96, and confined entirely to origins before 13:00 local — the
+  signature of a 13:00 auction publication gate.</caption>
+</table>
+
+<div class="box key avoid" style="margin-top:6pt">
+  <div class="lbl">On the leak's severity</div>
+  <p>
+    The leaked price is genuinely informative (a legitimate same-clock-time substitute
+    explains only R&sup2; = 0.26 of it), but it barely predicts the target: univariate
+    R&sup2; = 0.045 against 0.011 for the substitute. Closing it was necessary for
+    validity and did not overturn the ranking.
+  </p>
+</div>
+
+<h2><span class="n">3</span>Results</h2>
+
+<table class="avoid">
+  <thead><tr><th>Model</th><th>Rules</th><th>AQL</th><th>MAE</th><th>RMSE</th><th>AQCR</th><th>Params</th><th>vs clim.</th></tr></thead>
+  <tbody>
+    <tr class="best"><td>MR-GRU</td><td>yes</td><td>25.574</td><td>65.01</td><td>389.4</td><td>0.00</td><td>5,055</td><td>−12.3%</td></tr>
+    <tr><td>MR-LSTM</td><td>yes</td><td>25.670</td><td>65.28</td><td>389.4</td><td>0.00</td><td>5,895</td><td>−11.9%</td></tr>
+    <tr><td>LSTM</td><td>no</td><td>25.746</td><td>66.20</td><td>389.6</td><td>0.00</td><td>7,261</td><td>−11.7%</td></tr>
+    <tr><td>MRINN</td><td>yes</td><td>25.819</td><td>66.22</td><td>390.0</td><td>0.00</td><td>6,135</td><td>−11.4%</td></tr>
+    <tr><td>AttnBiLSTM</td><td>no</td><td>25.829</td><td>66.52</td><td>389.6</td><td>0.00</td><td>15,302</td><td>−11.4%</td></tr>
+    <tr><td>GRU</td><td>no</td><td>25.860</td><td>66.79</td><td>390.0</td><td>0.00</td><td>6,309</td><td>−11.3%</td></tr>
+    <tr><td>MLP</td><td>no</td><td>25.871</td><td>66.17</td><td>389.6</td><td>0.00</td><td>7,533</td><td>−11.2%</td></tr>
+    <tr><td>XGBoost</td><td>no</td><td>26.346</td><td>67.44</td><td>389.9</td><td class="w">2.75</td><td>&mdash;</td><td>−9.6%</td></tr>
+    <tr class="ref"><td>LQR</td><td>no</td><td>28.022</td><td>74.96</td><td>391.8</td><td class="w">15.75</td><td>538,080</td><td>−3.9%</td></tr>
+    <tr class="ref sep"><td>Climatology</td><td>&mdash;</td><td>29.150</td><td>75.20</td><td>393.8</td><td>0.00</td><td>&mdash;</td><td>0.0%</td></tr>
+    <tr class="ref"><td>Seasonal naive</td><td>&mdash;</td><td>39.870</td><td>96.03</td><td>547.0</td><td>0.00</td><td>&mdash;</td><td>+36.8%</td></tr>
+  </tbody>
+  <caption>Pooled over all four folds — scored once on concatenated per-fold predictions,
+  not averaged. No model emitted a single prediction beyond &plusmn;5,000 &euro;/MWh.
+  Every model converged via early stopping; none stopped at its epoch ceiling.</caption>
+</table>
+
+<h3>3.1 The three reporting horizons</h3>
+<table class="avoid">
+  <thead><tr><th>Horizon</th><th>Best model</th><th>AQL</th><th>MAE</th><th>Runner-up</th><th>Third</th></tr></thead>
+  <tbody>
+    <tr><td>15 min (h = 1)</td><td class="g">XGBoost</td><td>23.010</td><td>56.44</td><td>GRU 24.609</td><td>LSTM 24.894</td></tr>
+    <tr><td>1 hour (h = 4)</td><td class="g">MR-GRU</td><td>25.220</td><td>63.35</td><td>GRU 25.231</td><td>LSTM 25.236</td></tr>
+    <tr><td>1 day (h = 96)</td><td class="g">MR-GRU</td><td>25.957</td><td>66.41</td><td>LSTM 26.002</td><td>GRU 26.048</td></tr>
+  </tbody>
+  <caption>All read off the same forward pass, so the three rows are mutually consistent
+  and required no per-horizon retraining.</caption>
+</table>
+
+<h3>3.2 Do the market-rule blocks earn their place?</h3>
+<table class="avoid">
+  <thead><tr><th>Encoder</th><th>With rules</th><th>Without</th><th>&Delta;AQL</th><th>&Delta;%</th><th>Folds won</th><th>p (daily)</th></tr></thead>
+  <tbody>
+    <tr><td>Dense</td><td>MRINN</td><td>MLP</td><td>−0.051</td><td>−0.20%</td><td>2/4</td><td>0.255 &mdash; n.s.</td></tr>
+    <tr><td>LSTM</td><td>MR-LSTM</td><td>LSTM</td><td>−0.076</td><td>−0.29%</td><td>2/4</td><td>0.961 &mdash; n.s.</td></tr>
+    <tr class="best"><td>GRU</td><td>MR-GRU</td><td>GRU</td><td>−0.286</td><td>−1.10%</td><td>3/4</td><td class="g">0.0002</td></tr>
+  </tbody>
+  <caption>Paired by fold. Fold difficulty spans AQL 17 to 42 — several times any model
+  effect — so pooled means would be dominated by which quarters a model was scored on.</caption>
+</table>
+
+<h3>3.3 Significance</h3>
+<p>
+  Diebold–Mariano was run two ways: Newey–West at lag 96, and on non-overlapping daily
+  origins. Adjacent origins share 95 of their 96 targets, so the standard HAC correction
+  overstates significance; where the two disagree, the daily test is believed.
+</p>
+<table class="avoid">
+  <thead><tr><th>Comparison</th><th>&Delta;AQL</th><th>p (Newey–West)</th><th>p (daily)</th><th>Verdict</th></tr></thead>
+  <tbody>
+    <tr class="best"><td>MR-GRU − MRINN</td><td>−0.245</td><td>0.0002</td><td>0.0017</td><td class="g">Significant</td></tr>
+    <tr><td>MR-GRU − MR-LSTM</td><td>−0.096</td><td>0.0002</td><td>0.0014</td><td class="g">Significant</td></tr>
+    <tr><td>MR-GRU − AttnBiLSTM</td><td>−0.255</td><td>&lt;0.0001</td><td>0.0050</td><td class="g">Significant</td></tr>
+    <tr><td>MR-GRU − XGBoost</td><td>−0.772</td><td>&lt;0.0001</td><td>&lt;0.0001</td><td class="g">Significant</td></tr>
+    <tr class="ref"><td>MR-LSTM − MRINN</td><td>−0.148</td><td>0.0285</td><td>0.3689</td><td>Overlap artefact</td></tr>
+  </tbody>
+  <caption>The final row is the reason both tests are reported: significant under
+  Newey–West, not significant once overlapping origins are removed.</caption>
+</table>
+
+<h2><span class="n">4</span>Conclusions</h2>
+
+<ol class="find">
+  <li>
+    <b>The recurrent-encoder claim holds, and is now significant.</b>
+    MR-GRU beats MRINN by 0.245 AQL (p = 0.0017 on non-overlapping origins), wins all
+    four folds, and is the best model at both 1 hour and 1 day — on <b>5,055 parameters,
+    fewer than any other neural model tested</b>. This overturns the project's own earlier
+    conclusion of a tie at day-ahead, which was recorded before the leak and convergence
+    defects were found.
+  </li>
+  <li>
+    <b>The market-rule blocks are worth far less than assumed.</b>
+    They are statistically null at the Dense and LSTM encoders and significant only with
+    the GRU. Averaged across encoders they buy 0.53% of AQL. Their defensible value is
+    <b>parameter efficiency</b>, not accuracy: MR-GRU matches or beats every rules-free
+    model on 20% fewer parameters.
+  </li>
+  <li>
+    <b>GRU and LSTM are not interchangeable here.</b>
+    MR-GRU beats MR-LSTM significantly on both tests (p = 0.0014), so the cell type is a
+    real choice rather than a matter of taste — and the cheaper cell is the better one.
+  </li>
+  <li>
+    <b>Gradient boosting wins the short horizon outright.</b>
+    XGBoost is best of all nine at 15 minutes (AQL 23.01 against MR-GRU's 24.96, a 7.8%
+    margin) and worst at 24 hours. It exploits recent lags but has no horizon structure,
+    and needs 96 separate boosters. Any claim of a single model for the whole day must
+    concede this point.
+  </li>
+  <li>
+    <b>Zero quantile crossing is a property of the head, not of the encoder.</b>
+    Every model carrying the hierarchical quantile head scores AQCR = 0. The two models
+    without it do not: XGBoost 2.75, LQR 18.07. This was previously inherited from the
+    source paper as an assumption; it is now demonstrated.
+  </li>
+  <li>
+    <b>The honest headline is smaller than the one previously reported.</b>
+    Against climatology on matched rows, the best model is <b>−12.3% AQL and −13.4% MAE</b>
+    — not −32% against seasonal naive, a baseline that itself loses to predicting a
+    constant. RMSE sits at parity with a constant predictor for every model: these models
+    forecast the calm bulk of the distribution and capture essentially none of the spike
+    variance.
+  </li>
+</ol>
+
+
+<h2><span class="n">5</span>Assessment of the supervisor's suggestions</h2>
+<p>
+  Five suggestions were raised. Each was checked against the data rather than argued from
+  principle; verdicts and the evidence behind them follow.
+</p>
+
+<table class="prose avoid">
+  <thead><tr><th>Ref</th><th>Suggestion</th><th>Verdict</th></tr></thead>
+  <tbody>
+    <tr><td>S1</td><td>Add an imbalance-netting block modifying <span class="mono">P_RE</span> upstream</td><td class="g">Adopt</td></tr>
+    <tr><td>S2</td><td>Block diagram drawn as RE &rarr; EX &rarr; SC &rarr; price</td><td class="w">Correct before publication</td></tr>
+    <tr><td>S3</td><td>Report sMAPE alongside MAE and RMSE</td><td class="w">Push back</td></tr>
+    <tr><td>S4</td><td>120 epochs was not converging &mdash; try 200</td><td class="g">Concede</td></tr>
+    <tr><td>S5</td><td>&ldquo;Need to verify the signs&rdquo; on the INC series</td><td>Blocking &mdash; needs his answer</td></tr>
+  </tbody>
+</table>
+
+<h3>S1 &mdash; Netting into P_RE is the right block, but its influence is shrinking</h3>
+<p>
+  Modifying <span class="mono">P_RE</span> is correct: it is decisive on the majority of
+  intervals while <span class="mono">P_SC</span> is nearly inert. Placing netting
+  <i>upstream</i> of the rule rather than adding a fourth parallel component is also
+  correct &mdash; netting changes the volume requiring activation, it does not itself set
+  a price.
+</p>
+<table class="avoid">
+  <thead><tr><th>Year</th><th>Intervals</th><th>P_RE</th><th>P_EX</th><th>P_SC</th></tr></thead>
+  <tbody>
+    <tr><td>2022</td><td>35,040</td><td>82.4%</td><td>17.5%</td><td>0.1%</td></tr>
+    <tr><td>2023</td><td>35,040</td><td>71.6%</td><td>27.9%</td><td>0.4%</td></tr>
+    <tr><td>2024</td><td>35,136</td><td>67.7%</td><td>31.6%</td><td>0.7%</td></tr>
+    <tr class="best"><td>2025 &mdash; the test window</td><td>35,033</td><td>53.8%</td><td>44.7%</td><td>1.4%</td></tr>
+  </tbody>
+  <caption>Share of intervals where each rule component equals the settled price.
+  P_RE's dominance has fallen every year while P_EX has risen to meet it.</caption>
+</table>
+<p>
+  <b>Observation.</b> Over the whole record P_RE decides 68.9% of intervals, but on the
+  year actually tested it decides <b>53.8%</b>. A netting improvement will therefore show
+  on roughly half the test intervals, not two-thirds, and the write-up should quote the
+  2025 figure rather than the flattering whole-record one. Two checks before committing:
+  <span class="mono">system_imbalance</span> is already <b>83.1%</b> explained by net
+  activation alone (r = +0.911), so INC may add little; and inside the model these signals
+  are 8-dimensional learned encodings, so the block is netting-<i>structured</i>, not
+  literal netting, and should not be over-claimed as physical fidelity.
+</p>
+
+<h3>S2 &mdash; The block diagram contradicts the code</h3>
+<p>
+  The diagram shows a series chain. The implementation computes the three components
+  <b>in parallel</b> and blends the smooth minimum and maximum through a learned gate;
+  the only real dependency is <span class="mono">P_EX &rarr; P_SC</span>, because
+  scarcity consumes <span class="mono">P_base</span> from the market-reference block.
+</p>
+<p>
+  <b>Conclusion.</b> Redraw before publication &mdash; a reviewer who opens the code will
+  catch it. This is not cosmetic: the series diagram implies that netting entered at RE
+  would propagate through EX and SC. It will not. Netting changes one of three parallel
+  candidates and must then win the min/max gate to move the price at all, which is
+  precisely why the declining P_RE share above matters.
+</p>
+
+<h3>S3 &mdash; Why sMAPE does not survive this price series</h3>
+<p>
+  sMAPE divides by <span class="mono">(|actual| + |forecast|) / 2</span>, a denominator
+  that is only well-behaved when prices are comfortably positive. Imbalance prices are not.
+</p>
+<div class="two">
+  <table class="avoid">
+    <thead><tr><th>Condition</th><th>Rows</th><th>Share</th></tr></thead>
+    <tbody>
+      <tr><td>Price negative</td><td>2,372</td><td>6.77%</td></tr>
+      <tr><td>Price exactly zero</td><td>640</td><td>1.83%</td></tr>
+      <tr><td>|price| &le; 10 &euro;/MWh</td><td>2,717</td><td>7.76%</td></tr>
+      <tr class="best"><td>Any of the above</td><td>4,363</td><td>12.45%</td></tr>
+    </tbody>
+    <caption>2025 window, 35,033 intervals. Zeros make sMAPE undefined; the rest
+    collapse its denominator. The union is exact, not the sum &mdash; the sets overlap.</caption>
+  </table>
+  <table class="avoid">
+    <thead><tr><th>Actual</th><th>Forecast</th><th>Error</th><th>sMAPE</th></tr></thead>
+    <tbody>
+      <tr><td>200</td><td>205</td><td>5</td><td>2.5%</td></tr>
+      <tr><td>20</td><td>25</td><td>5</td><td>22.2%</td></tr>
+      <tr><td>2</td><td>7</td><td>5</td><td class="w">111.1%</td></tr>
+      <tr><td>&minus;3</td><td>2</td><td>5</td><td class="w">200.0%</td></tr>
+    </tbody>
+    <caption>One fixed &euro;5 error, scored at four price levels. Identical forecast
+    quality scores 2.5% to 200% depending only on where the price sits.</caption>
+  </table>
+</div>
+<p>
+  <b>Conclusion.</b> The headline would track the price level rather than forecast skill,
+  driven by the 12.45% of intervals near or below zero. There is also a purpose mismatch:
+  sMAPE exists to compare forecasts <i>across series of different scales</i>, and there is
+  one series here, so scale-invariance buys nothing while costing interpretability.
+  <b>Propose MASE instead</b> &mdash; scaled by in-sample seasonal-naive error, it handles
+  zeros and negatives and is standard in the forecasting literature. If sMAPE is still
+  required, report it restricted to |actual| &gt; 10 alongside the unrestricted figure;
+  the gap between the two is itself the argument.
+</p>
+
+<h3>S4 &mdash; The convergence complaint was correct</h3>
+<p>
+  He was right, and the evidence was already in the project's own output: with a ceiling
+  of 120 epochs and patience 12, every run stopped at 119 or 120. Patience never fired,
+  so training ended because the loop ran out rather than because the model stopped
+  improving.
+</p>
+<table class="avoid">
+  <thead><tr><th>Configuration</th><th>Updates / epoch</th><th>Epochs</th><th>Total updates</th><th>Of requirement</th></tr></thead>
+  <tbody>
+    <tr class="ref"><td>Previous &mdash; batch 1024</td><td>18</td><td>120</td><td>2,160</td><td class="w">64%</td></tr>
+    <tr><td>His suggestion &mdash; batch 1024</td><td>18</td><td>200</td><td>3,600</td><td>106% &mdash; marginal</td></tr>
+    <tr class="best"><td>Adopted &mdash; batch 256</td><td>69</td><td>~49</td><td>3,381</td><td>comfortable</td></tr>
+  </tbody>
+  <caption>17,480 training rows per rolling fold at stride 2.</caption>
+</table>
+<p>
+  <b>Conclusion.</b> The diagnosis was right but the lever was batch size, not the epoch
+  number: what a model learns from is gradient updates, and epochs only buy updates at a
+  rate the batch size sets. His 200 would have sufficed but only just &mdash; the deepest
+  fold needed 109 epochs plus confirmation. Every model in this report now stops via early
+  stopping. Stated honestly, the old runs were not badly <i>wrong</i> &mdash; validation
+  loss improved only 0.4% from epoch 20 to 49 &mdash; they were <b>unconverged and
+  therefore indefensible</b>, which is a more precise complaint and a more defensible fix.
+</p>
+
+<h3>S5 &mdash; What &ldquo;INC&rdquo; refers to is genuinely ambiguous</h3>
+<p>
+  His own note that the signs need verifying is well placed. In a German control-zone
+  context <span class="mono">INC</span> plausibly denotes either the <b>IGCC
+  imbalance-netting volume</b> &mdash; MW of opposing imbalance cancelled against
+  neighbouring TSOs before activation &mdash; or the <b>reBAP incentive component</b>
+  (<i>Anreizkomponente</i>), which is a price adder, not a volume. Different quantities,
+  different units, different sign conventions.
+</p>
+<p>
+  <b>Conclusion.</b> Building against the wrong one yields a model that trains, converges
+  and means nothing. This is the only item that cannot be resolved without him, and it is
+  compounded by an unresolved contradiction in the project's own records: the dataset is
+  described as the <b>Austrian</b> balancing market in the project log and as
+  <b>German control-zone</b> in the audit. The bidding zone should be confirmed at the
+  same time as the sign convention.
+</p>
+
+<h2><span class="n">6</span>Limitations</h2>
+<div class="two">
+  <div class="box caution">
+    <div class="lbl">Stated plainly</div>
+    <ul style="margin-bottom:0">
+      <li><b>Single seed.</b> Prior work measured seed noise at &plusmn;0.11–0.26 AQL,
+        which exceeds several differences reported here. The DM tests are across origins,
+        not seeds, so they do not cover seed variation.</li>
+      
+      <li><b>No spike skill.</b> RMSE parity with a constant is a real limitation, not a
+        presentational one.</li>
+    </ul>
+  </div>
+  <div class="box">
+    <div class="lbl">Not yet resolved</div>
+    <ul style="margin-bottom:0">
+      <li>The dataset is described inconsistently as Austrian and as German control-zone.
+        This does not affect the results above, but it must be settled before the
+        proposed imbalance-netting extension, which depends on which market's
+        <span class="mono">INC</span> series is meant.</li>
+      <li>Rule-component dominance is shifting: P_RE fell from 82.4% of intervals in 2022
+        to <b>53.8%</b> in 2025 while P_EX rose to 44.7%.</li>
+    </ul>
+  </div>
+</div>
+
+<h2><span class="n">7</span>Recommended next steps</h2>
+<ol>
+  <li><b>Repeat at two further seeds</b> for the four models that carry a claim
+    (MR-GRU, MR-LSTM, MRINN, GRU). This is the single highest-value remaining run and the
+    only way to convert "significant across origins" into "robust".</li>
+  <li><b>Report the rules as an efficiency result</b>, not an accuracy one, and state the
+    encoder-dependence explicitly rather than averaging it away.</li>
+  <li><b>Settle the market and the INC definition</b> before building the netting block,
+    and quote the 2025 P_RE share (53.8%) rather than the whole-record 68.9%.</li>
+  <li><b>Replace sMAPE with MASE</b> (&sect;5, S3), and settle the bidding zone and INC
+    definition (&sect;5, S5) before any netting work begins.</li>
+</ol>
+
+<footer>
+  Reproduce: <span class="mono">benchmark_models.py</span> (training),
+  <span class="mono">summarise_benchmark.py</span> (tables),
+  <span class="mono">dm_test.py</span> (significance),
+  <span class="mono">baselines.py</span> (climatology &amp; naive),
+  <span class="mono">audit_gate_closure.py</span> (leak measurement).
+  Outputs in <span class="mono">results/</span>. All figures recomputed from
+  <span class="mono">imbalance_data.csv</span>; nothing carried from earlier runs.
+</footer>
+
+</body>
+</html>

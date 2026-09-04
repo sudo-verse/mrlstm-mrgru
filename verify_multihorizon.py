@@ -123,6 +123,38 @@ check("MRINN gets flat (N, T) where recurrent gets (N, T, 1)",
       TRm[0].shape == TR[0].shape[:2] and np.allclose(TRm[0], TR[0][:, :, 0]),
       f"{TRm[0].shape} vs {TR[0].shape}")
 
+# -------------------------------------------------------- 2b. DA gate closure
+print("\n=== 2b. Day-ahead gate closure ===")
+# The day-ahead auction for delivery day D clears at 12:00 local on D-1, so an origin
+# before ~13:00 local cannot know tomorrow's prices. Until 2026-08-29 `make_da_future`
+# took shift(-h) unconditionally and handed the model 14.95% of its DA cells from the
+# future. This section pins the fix so it cannot silently regress.
+_st = pd.DatetimeIndex(tes[MH.TIME_COL])
+if _st.tz is None:
+    _st = _st.tz_localize("UTC")
+_known = MH.da_published_mask(_st, HZ)
+
+da_fixed = MH.make_da_future(te, tes, HZ, gate_closure=True)
+da_leaky = MH.make_da_future(te, tes, HZ, gate_closure=False)
+
+check("gate closure never flags an unpublished price as present",
+      not (da_fixed[..., 1] > 0)[~_known].any(),
+      f"{int((da_fixed[..., 1] > 0)[~_known].sum())} violations")
+check("gate closure blanks the price, not just the flag",
+      np.all(da_fixed[..., 0][~_known] == 0.0))
+check("published cells are untouched",
+      np.array_equal(da_fixed[_known], da_leaky[_known]))
+check("the legacy path still leaks (kept only to reproduce results/ up to 2026-08-29)",
+      (da_leaky[..., 1] > 0)[~_known].any())
+check("near horizons are never gated -- h=1 is always knowable",
+      _known[:, 0].all(), f"{int((~_known[:, 0]).sum())} gated at h=1")
+check("far horizons are gated for the morning origins",
+      0.2 < (~_known[:, HZ - 1]).mean() < 0.8,
+      f"h=96 gated on {(~_known[:, HZ-1]).mean():.1%} of origins")
+_was, _now = da_leaky[..., 1] > 0, da_fixed[..., 1] > 0
+print(f"     DA cells present: {_was.mean():.2%} leaky -> {_now.mean():.2%} gated "
+      f"({(_was & ~_now).sum() / max(_was.sum(), 1):.2%} of present cells blanked)")
+
 # ------------------------------------------------------------------- 3. build
 print("\n=== 3. Parameter budget ===")
 C = list(MR.scaled_params(tr, FEATS_PRICES, FEATS_CAP)[:11])

@@ -1,0 +1,19 @@
+2026-08-30 04:49:58.921487: I tensorflow/core/util/port.cc:113] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+2026-08-30 04:49:58.924085: I external/local_tsl/tsl/cuda/cudart_stub.cc:32] Could not find cuda drivers on your machine, GPU will not be used.
+2026-08-30 04:49:59.082814: I external/local_tsl/tsl/cuda/cudart_stub.cc:32] Could not find cuda drivers on your machine, GPU will not be used.
+2026-08-30 04:49:59.190047: E external/local_xla/xla/stream_executor/cuda/cuda_fft.cc:479] Unable to register cuFFT factory: Attempting to register factory for plugin cuFFT when one has already been registered
+2026-08-30 04:49:59.423108: E external/local_xla/xla/stream_executor/cuda/cuda_dnn.cc:10575] Unable to register cuDNN factory: Attempting to register factory for plugin cuDNN when one has already been registered
+2026-08-30 04:49:59.423225: E external/local_xla/xla/stream_executor/cuda/cuda_blas.cc:1442] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered
+2026-08-30 04:49:59.669723: I tensorflow/core/platform/cpu_feature_guard.cc:210] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
+To enable the following instructions: AVX2 AVX_VNNI FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
+2026-08-30 04:50:01.176915: W tensorflow/compiler/tf2tensorrt/utils/py_utils.cc:38] TF-TRT Warning: Could not find TensorRT
+models   lqr
+recipe   T=32 stride=2 batch=256 lr=0.003 epochs<=300 patience=25 da_drop=0.2 seed=42
+gate_closure=True  <- these numbers supersede the leaky runs
+
+  LQR         roll0  AQL  28.885  MAE  80.24  AQCR 25.19  p 538,080  ep 296/300    4.5 min <-- hit the epoch ceiling
+  LQR         roll1  AQL  47.474  MAE 117.61  AQCR 25.62  p 538,080  ep 299/300    4.5 min <-- hit the epoch ceiling
+  LQR         roll2  AQL  24.237  MAE  71.18  AQCR 29.35  p 538,080  ep 295/300    4.5 min <-- hit the epoch ceiling
+  LQR         roll3  AQL  21.876  MAE  64.39  AQCR 13.90  p 538,080  ep 300/300    4.5 min <-- hit the epoch ceiling
+
+total 0.30 h

@@ -1,0 +1,207 @@
+<!doctype html><html><head><meta charset="utf-8">
+<title>Benchmark Metrics — MRINN / MR-GRU study</title>
+<style>
+  @page { size: A4; margin: 17mm 15mm 16mm 15mm; }
+  *{box-sizing:border-box}
+  html{-webkit-print-color-adjust:exact; print-color-adjust:exact}
+  body{font-family:"Carlito","Liberation Sans",sans-serif; font-size:9.6pt;
+       line-height:1.5; color:#16202b; margin:0}
+  h1{font-family:"Caladea","Liberation Serif",serif; font-size:19pt; margin:0 0 4pt;
+     letter-spacing:-.2pt}
+  .sub{color:#4a5a63; font-size:10pt; margin:0 0 10pt}
+  .meta{font-size:8.2pt; color:#5c6a72; border-top:.6pt solid #c9d2d5;
+        border-bottom:.6pt solid #c9d2d5; padding:5pt 0; margin-bottom:13pt}
+  .meta b{color:#16202b; font-weight:600}
+  h2{font-family:"Caladea","Liberation Serif",serif; font-size:12.5pt;
+     margin:15pt 0 6pt; padding-bottom:3pt; border-bottom:.6pt solid #c9d2d5;
+     page-break-after:avoid}
+  h3{font-size:9.8pt; margin:10pt 0 4pt; page-break-after:avoid}
+  p{margin:0 0 6pt}
+  table{border-collapse:collapse; width:100%; margin:7pt 0 9pt;
+        page-break-inside:avoid; font-size:8.1pt}
+  th,td{padding:3.2pt 4pt; border-bottom:.5pt solid #e2e7e9; text-align:left}
+  thead th{background:#eef2f3; border-bottom:.8pt solid #9fb0b5; font-size:7.3pt;
+           text-transform:uppercase; letter-spacing:.35pt; color:#3d4c56; font-weight:600}
+  td.n,th.n{text-align:right; font-variant-numeric:tabular-nums;
+            font-family:"Liberation Mono",monospace; font-size:7.9pt}
+  tr.best td{background:#e4eeee; font-weight:700}
+  table.defs{page-break-inside:auto}
+  table.defs tr{page-break-inside:avoid}
+  table.defs td{vertical-align:top; font-size:8.6pt}
+  table.defs td:first-child{width:74pt; font-weight:600; white-space:nowrap}
+  table.defs td:nth-child(2){width:96pt; color:#4a5a63}
+  .note{border-left:1.6pt solid #2d6a6f; background:#f0f5f5; padding:5pt 8pt;
+        margin:7pt 0; font-size:8.6pt; page-break-inside:avoid}
+  .note b{color:#2d6a6f}
+  .warn{border-left-color:#c2740f; background:#fbf4e8}
+  .warn b{color:#a8650d}
+  code{font-family:"Liberation Mono",monospace; font-size:8.4pt;
+       background:#eef2f3; padding:0 2pt}
+  ul{margin:0 0 6pt; padding-left:13pt} li{margin-bottom:3pt}
+  .pb{page-break-before:always}
+  footer{margin-top:12pt; padding-top:5pt; border-top:.6pt solid #c9d2d5;
+         font-size:7.8pt; color:#5c6a72}
+</style></head><body>
+
+<h1>Benchmark Metrics</h1>
+<p class="sub">Nine models for Austrian imbalance-price forecasting, measured under
+identical leak-free conditions.</p>
+<div class="meta">
+  <b>Market</b> APG control area (AT) &nbsp;·&nbsp;
+  <b>Data</b> 140,249 quarter-hours, 2022–2025 &nbsp;·&nbsp;
+  <b>Test</b> 2025, 4 rolling folds, 34,521 origins × 96 horizons &nbsp;·&nbsp;
+  <b>Seed</b> 42 &nbsp;·&nbsp; <b>Date</b> 31 Aug 2026
+</div>
+
+<h2>1. Conditions</h2>
+<p>Every model was trained on identical rolling quarterly folds with identical scaling,
+identical known-future covariates, identical day-ahead outage dropout, and the day-ahead
+<b>gate-closure fix enabled</b> — so no model sees an auction price that had not yet
+cleared at its forecast origin. The design is a 2 × 3 grid (market-rule blocks against a
+plain mixer, across Dense, LSTM and GRU encoders) plus four references. Reading down a
+column isolates the encoder; reading across a row isolates the market rules.</p>
+<p>All accuracy figures are <b>pooled</b> on concatenated per-fold predictions, each
+already inverted to EUR/MWh inside its own fold. This matters: RMSE is a root of a mean
+of squares and does not average across folds — the mean of four fold-RMSEs understates
+the pooled value by roughly 17%.</p>
+
+<h2>2. Results</h2>
+<table>
+<thead><tr>
+<th>Model</th><th>Rules</th><th class="n">AQL</th><th class="n">MAE</th><th class="n">RMSE</th>
+<th class="n">sMAPE</th><th class="n">MASE</th><th class="n">AQCR</th><th class="n">Params</th>
+<th class="n">vs clim<br>AQL</th><th class="n">vs clim<br>MAE</th>
+<th class="n">Train s</th><th class="n">Val s</th><th class="n">Test s</th><th class="n">Total s</th>
+</tr></thead>
+<tbody>
+<tr><td>MRINN</td><td>yes</td><td class="n">25.82</td><td class="n">66.22</td><td class="n">389.97</td><td class="n">63.18</td><td class="n">0.68</td><td class="n">0.00</td><td class="n">6,135</td><td class="n">−11.43%</td><td class="n">−11.94%</td><td class="n">218.8</td><td class="n">20.1</td><td class="n">0.66</td><td class="n">244.4</td></tr>
+<tr><td>MR-LSTM</td><td>yes</td><td class="n">25.67</td><td class="n">65.28</td><td class="n">389.37</td><td class="n">62.74</td><td class="n">0.67</td><td class="n">0.00</td><td class="n">5,895</td><td class="n">−11.94%</td><td class="n">−13.19%</td><td class="n">409.5</td><td class="n">85.3</td><td class="n">0.90</td><td class="n">498.9</td></tr>
+<tr class="best"><td>MR-GRU</td><td>yes</td><td class="n">25.57</td><td class="n">65.01</td><td class="n">389.37</td><td class="n">62.24</td><td class="n">0.67</td><td class="n">0.00</td><td class="n">5,055</td><td class="n">−12.27%</td><td class="n">−13.56%</td><td class="n">625.0</td><td class="n">109.8</td><td class="n">0.88</td><td class="n">738.9</td></tr>
+<tr><td>MLP</td><td>no</td><td class="n">25.87</td><td class="n">66.17</td><td class="n">389.63</td><td class="n">63.53</td><td class="n">0.68</td><td class="n">0.00</td><td class="n">7,533</td><td class="n">−11.25%</td><td class="n">−12.01%</td><td class="n">119.6</td><td class="n">29.4</td><td class="n">0.40</td><td class="n">154.3</td></tr>
+<tr><td>LSTM</td><td>no</td><td class="n">25.75</td><td class="n">66.20</td><td class="n">389.61</td><td class="n">63.90</td><td class="n">0.68</td><td class="n">0.00</td><td class="n">7,261</td><td class="n">−11.68%</td><td class="n">−11.97%</td><td class="n">320.4</td><td class="n">50.5</td><td class="n">0.68</td><td class="n">374.8</td></tr>
+<tr><td>GRU</td><td>no</td><td class="n">25.86</td><td class="n">66.79</td><td class="n">390.04</td><td class="n">64.30</td><td class="n">0.69</td><td class="n">0.00</td><td class="n">6,309</td><td class="n">−11.29%</td><td class="n">−11.18%</td><td class="n">424.7</td><td class="n">58.9</td><td class="n">0.66</td><td class="n">487.5</td></tr>
+<tr><td>AttnBiLSTM</td><td>no</td><td class="n">25.83</td><td class="n">66.52</td><td class="n">389.63</td><td class="n">63.93</td><td class="n">0.69</td><td class="n">0.00</td><td class="n">15,302</td><td class="n">−11.39%</td><td class="n">−11.55%</td><td class="n">749.0</td><td class="n">100.8</td><td class="n">1.04</td><td class="n">854.1</td></tr>
+<tr><td>XGBoost</td><td>no</td><td class="n">26.35</td><td class="n">67.44</td><td class="n">389.94</td><td class="n">64.63</td><td class="n">0.70</td><td class="n">2.75</td><td class="n">—</td><td class="n">−9.62%</td><td class="n">−10.32%</td><td class="n">2,807.0</td><td class="n">—</td><td class="n">0.49</td><td class="n">2,810.6</td></tr>
+<tr><td>LQR</td><td>no</td><td class="n">28.02</td><td class="n">74.96</td><td class="n">391.78</td><td class="n">72.13</td><td class="n">0.78</td><td class="n">18.07</td><td class="n">538,080</td><td class="n">−3.87%</td><td class="n">−0.33%</td><td class="n">358.6</td><td class="n">134.2</td><td class="n">0.19</td><td class="n">497.8</td></tr>
+</tbody></table>
+<p style="font-size:8.4pt;color:#4a5a63;margin-top:-3pt">Reference baselines on the same
+rows: <b>climatology</b> AQL 29.150, MAE 75.20, RMSE 393.8 &nbsp;·&nbsp;
+<b>seasonal naive</b> AQL 39.870, MAE 96.03, RMSE 547.0. Times are seconds per fold;
+multiply by four for the whole study.</p>
+
+<h2>3. What each column means</h2>
+<table class="defs">
+<thead><tr><th>Metric</th><th>Units / range</th><th>Definition and why it is here</th></tr></thead>
+<tbody>
+<tr><td>AQL</td><td>EUR/MWh, lower better</td><td><b>Average quantile loss</b> — mean pinball loss over the five quantiles (0.1, 0.25, 0.5, 0.75, 0.9). This is the headline metric because the model is probabilistic: it scores the whole predicted distribution, not just the central estimate.</td></tr>
+<tr><td>MAE</td><td>EUR/MWh, lower better</td><td>Mean absolute error of the median (q50) forecast. Interpretable in market units and robust to the extreme tail.</td></tr>
+<tr><td>RMSE</td><td>EUR/MWh, lower better</td><td>Root mean squared error of q50. Squaring makes it dominated by spikes — the imbalance price reaches ±15,000 EUR/MWh — which is why all models sit near 390 regardless of skill.</td></tr>
+<tr><td>sMAPE</td><td>%, 0–200, lower better</td><td>Symmetric mean absolute percentage error. Included on request; see the caveat below.</td></tr>
+<tr><td>MASE</td><td>ratio, lower better</td><td>Mean absolute scaled error, scaled by the seasonal-naive change at season = 96. Scale-free and, unlike sMAPE, valid with negative prices. <b>Below 1 means better than seasonal naive</b> — every model qualifies.</td></tr>
+<tr><td>AQCR</td><td>%, lower better</td><td><b>Average quantile crossing rate</b> — how often predicted quantiles cross (e.g. q75 below q50), which is logically impossible and signals a broken forecast distribution.</td></tr>
+<tr><td>Params</td><td>count</td><td>Trainable weights. A proxy for model capacity and overfitting risk.</td></tr>
+<tr><td>vs clim</td><td>%, negative better</td><td>Improvement over climatology — predicting the training-set quantiles for every interval. This is the honest reference: beating a seasonal naive on this series is easy, beating climatology is not.</td></tr>
+<tr><td>Train / Val / Test</td><td>seconds per fold</td><td>Computational cost split into fitting, per-epoch validation, and inference over the test set.</td></tr>
+</tbody></table>
+
+<div class="note warn"><b>Caveat on sMAPE.</b> It is computable here — the denominator
+|y| + |ŷ| never vanishes — but it <b>saturates</b>. 6.8% of target cells are negative,
+and <b>8.8% sit at the 200% ceiling</b>, where the metric returns the same value whether
+the miss is 100 or 10,000 EUR/MWh. Those cells are 9.2% of the data but 29.6% of the
+metric, and their mean absolute error is 174 EUR/MWh. sMAPE therefore cannot rank tail
+behaviour, which is what this market turns on. It ranks the models in the same order as
+AQL, so it is not misleading as an ordering — but its magnitude should not be
+interpreted. MASE is reported beside it for that reason.</div>
+
+<div class="note"><b>Note on timing.</b> Train and validation are the measured
+per-epoch cost multiplied by the recorded epoch count. Per-epoch cost is taken as a
+<i>slope</i> — differencing a 6-epoch fit against a 2-epoch fit — so the fixed graph-tracing
+and setup overhead cancels rather than being multiplied by the epoch count. Test time and
+data preparation are measured directly. Reconstructed totals land 8–12% below the
+originally recorded per-fold wall time, which is expected: that figure also covered
+inverse-transforming, per-horizon scoring and writing prediction archives.
+<b>XGBoost has no epochs</b>, so its training figure is a direct measurement of the full
+96-booster fit and validation does not apply; its <code>Params</code> is blank because the
+stored value was 2,993 boosting rounds, not weights, and printing that beside a neural
+weight count would invite a false comparison.</div>
+
+<h2>4. The same models at the three reporting horizons</h2>
+<p>The pooled table averages over all 96 horizons and hides a genuine crossover.</p>
+<table>
+<thead><tr><th>Model</th><th class="n">AQL<br>15 min</th><th class="n">AQL<br>1 hour</th><th class="n">AQL<br>1 day</th>
+<th class="n">MAE<br>15 min</th><th class="n">MAE<br>1 hour</th><th class="n">MAE<br>1 day</th>
+<th class="n">sMAPE<br>15 min</th><th class="n">sMAPE<br>1 hour</th><th class="n">sMAPE<br>1 day</th></tr></thead>
+<tbody>
+<tr><td>MRINN</td><td class="n">25.14</td><td class="n">25.38</td><td class="n">26.11</td><td class="n">64.17</td><td class="n">64.78</td><td class="n">67.19</td><td class="n">61.75</td><td class="n">61.87</td><td class="n">63.80</td></tr>
+<tr><td>MR-LSTM</td><td class="n">25.18</td><td class="n">25.36</td><td class="n">26.08</td><td class="n">63.15</td><td class="n">63.80</td><td class="n">66.90</td><td class="n">61.36</td><td class="n">61.64</td><td class="n">63.43</td></tr>
+<tr><td>MR-GRU</td><td class="n">24.92</td><td class="n">25.18</td><td class="n">25.92</td><td class="n">62.20</td><td class="n">63.27</td><td class="n">66.32</td><td class="n">60.27</td><td class="n">60.62</td><td class="n">62.72</td></tr>
+<tr><td>MLP</td><td class="n">25.28</td><td class="n">25.37</td><td class="n">26.26</td><td class="n">64.21</td><td class="n">64.34</td><td class="n">67.42</td><td class="n">62.38</td><td class="n">61.98</td><td class="n">64.60</td></tr>
+<tr><td>LSTM</td><td class="n">24.85</td><td class="n">25.20</td><td class="n">25.96</td><td class="n">63.10</td><td class="n">64.24</td><td class="n">66.99</td><td class="n">61.25</td><td class="n">61.66</td><td class="n">64.35</td></tr>
+<tr><td>GRU</td><td class="n">24.57</td><td class="n">25.19</td><td class="n">26.01</td><td class="n">61.83</td><td class="n">64.11</td><td class="n">67.05</td><td class="n">60.92</td><td class="n">61.79</td><td class="n">64.07</td></tr>
+<tr><td>AttnBiLSTM</td><td class="n">25.17</td><td class="n">25.36</td><td class="n">26.34</td><td class="n">64.19</td><td class="n">64.66</td><td class="n">68.10</td><td class="n">62.86</td><td class="n">62.36</td><td class="n">65.32</td></tr>
+<tr><td>XGBoost</td><td class="n">22.97</td><td class="n">25.48</td><td class="n">26.88</td><td class="n">56.35</td><td class="n">63.59</td><td class="n">68.53</td><td class="n">55.34</td><td class="n">61.04</td><td class="n">65.42</td></tr>
+<tr><td>LQR</td><td class="n">25.91</td><td class="n">27.33</td><td class="n">28.59</td><td class="n">67.69</td><td class="n">73.59</td><td class="n">77.06</td><td class="n">65.72</td><td class="n">70.02</td><td class="n">72.92</td></tr>
+</tbody></table>
+
+<h2>5. Statistical significance</h2>
+<p>Diebold–Mariano, computed two ways because adjacent origins share 95 of their 96
+targets: Newey–West with lag 96 so the overlap sits inside the bandwidth, and
+non-overlapping daily origins (one per day, 361 points) where the classical assumption
+holds outright. Negative favours the first-named model.</p>
+<table>
+<thead><tr><th>Comparison</th><th>Isolates</th><th class="n">ΔAQL</th><th class="n">p (NW)</th><th class="n">p (daily)</th><th>Verdict</th></tr></thead>
+<tbody>
+<tr><td>MR-GRU − MRINN</td><td>encoder, rules held</td><td class="n">−0.245</td><td class="n">0.0002</td><td class="n">0.0017</td><td>GRU encoder wins</td></tr>
+<tr><td>MR-GRU − MR-LSTM</td><td>encoder, rules held</td><td class="n">−0.096</td><td class="n">0.0002</td><td class="n">0.0014</td><td>GRU encoder wins</td></tr>
+<tr><td>MR-GRU − GRU</td><td>rules, GRU encoder</td><td class="n">−0.286</td><td class="n">0.0000</td><td class="n">0.0002</td><td>rules help</td></tr>
+<tr><td>MR-LSTM − LSTM</td><td>rules, LSTM encoder</td><td class="n">−0.075</td><td class="n">0.153</td><td class="n">0.961</td><td>not significant</td></tr>
+<tr><td>MRINN − MLP</td><td>rules, Dense encoder</td><td class="n">−0.052</td><td class="n">0.417</td><td class="n">0.255</td><td>not significant</td></tr>
+</tbody></table>
+
+<h2>6. How to read the table</h2>
+<h3>MR-GRU is the best model, and it is also the smallest</h3>
+<p>It wins every accuracy column while using <b>5,055 parameters</b> — the fewest of any
+neural model, a third of AttnBiLSTM's and a hundredth of LQR's — and completes the
+four-fold study in 49 minutes against AttnBiLSTM's 57 and XGBoost's 187. That is a clean
+accuracy-per-parameter and accuracy-per-second argument. Inference is under one second
+per fold for all nine models, so the rule blocks impose no deployment cost, only
+training cost.</p>
+
+<h3>The encoder swap is real but small</h3>
+<p>MR-GRU beats MRINN by 0.245 AQL, significant on both tests — a genuine effect, but a
+<b>0.95% improvement</b>. Changing the encoder alone is a thin contribution.</p>
+
+<h3>The market rules are worth about 0.53% — and only at longer horizons</h3>
+<p>Averaged across the three encoders the rule blocks buy roughly half a percent, and
+only the GRU pairing reaches significance. The per-horizon table shows why the pooled
+figure misleads: <b>at 15 minutes the rules actively hurt</b> both recurrent models
+(plain GRU 24.57 against MR-GRU 24.92; plain LSTM 24.85 against MR-LSTM 25.18), and the
+sign only flips by day-ahead. The defensible claim is therefore narrower and more
+interesting than "market rules help": rule structure costs accuracy where persistence is
+strong, and earns its place as the horizon lengthens.</p>
+
+<h3>XGBoost is the mirror image</h3>
+<p>It is the strongest model at 15 minutes by a wide margin (AQL 22.97, 8% clear of
+MR-GRU) and second-worst at a day (26.88). Its advantage is entirely short-horizon, which
+is the same effect seen from the other side.</p>
+
+<h3>Only two models can produce an invalid distribution</h3>
+<p>AQCR is exactly zero for seven of nine. That is earned by the hierarchical quantile
+head, which makes crossing structurally impossible, not by the encoder. XGBoost (2.75%)
+and LQR (18.07%) lack that head, and LQR's figure means nearly one prediction in five is
+internally inconsistent.</p>
+
+<div class="note"><b>The honest headline.</b> The best model improves on climatology by
+<b>12.3% AQL and 13.6% MAE</b>. Against the seasonal naive the same model looks far
+better, but that baseline is weak on this series and should not be used for the headline.
+All nine models sit within 3% of one another, which is itself a finding: the residual
+error is dominated by the unpredictability of the imbalance direction, not by model
+choice.</div>
+
+<footer>
+Reproducible from <code>benchmark_models.py</code>, <code>results_table.py</code>,
+<code>timing_benchmark.py</code>, <code>dm_test.py</code> and <code>baselines.py</code>.
+Data: APG control area, 140,249 quarter-hours, 2022–2025. Test year 2025, four rolling
+folds retrained quarterly, seed 42. Gate closure enabled throughout.
+</footer>
+</body></html>

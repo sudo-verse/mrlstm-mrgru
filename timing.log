@@ -1,0 +1,29 @@
+2026-08-30 21:10:22.938994: I tensorflow/core/util/port.cc:113] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+2026-08-30 21:10:22.939939: I external/local_tsl/tsl/cuda/cudart_stub.cc:32] Could not find cuda drivers on your machine, GPU will not be used.
+2026-08-30 21:10:22.944659: I external/local_tsl/tsl/cuda/cudart_stub.cc:32] Could not find cuda drivers on your machine, GPU will not be used.
+2026-08-30 21:10:22.957016: E external/local_xla/xla/stream_executor/cuda/cuda_fft.cc:479] Unable to register cuFFT factory: Attempting to register factory for plugin cuFFT when one has already been registered
+2026-08-30 21:10:22.980723: E external/local_xla/xla/stream_executor/cuda/cuda_dnn.cc:10575] Unable to register cuDNN factory: Attempting to register factory for plugin cuDNN when one has already been registered
+2026-08-30 21:10:22.980813: E external/local_xla/xla/stream_executor/cuda/cuda_blas.cc:1442] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered
+2026-08-30 21:10:22.996018: I tensorflow/core/platform/cpu_feature_guard.cc:210] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
+To enable the following instructions: AVX2 AVX_VNNI FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
+2026-08-30 21:10:23.904589: W tensorflow/compiler/tf2tensorrt/utils/py_utils.cc:38] TF-TRT Warning: Could not find TensorRT
+timing on fold roll0, batch 256, T=32, 96 horizons, 5 quantiles
+
+  data prep [mrinn]    4.9 s   train 17,504 / val 8,704 / test 8,512 origins
+  data prep [gru  ]    3.2 s   train 17,504 / val 8,704 / test 8,512 origins
+2026-08-30 21:10:56.109159: E tensorflow/core/util/util.cc:131] oneDNN supports DT_INT32 only on platforms with AVX-512. Falling back to the default Eigen-based implementation if present.
+  MRINN       epochs  53.2  train   218.8  val   20.1  test  0.66  total   244.4 s  (recorded 277)
+  MLP         epochs  51.2  train   119.6  val   29.4  test  0.40  total   154.3 s  (recorded 170)
+  LQR         epochs 571.2  train   358.5  val  134.2  test  0.19  total   497.8 s  (recorded 500)
+  MR-GRU      epochs  75.5  train   625.0  val  109.8  test  0.88  total   738.9 s  (recorded 800)
+  GRU         epochs  50.2  train   424.7  val   58.9  test  0.66  total   487.5 s  (recorded 534)
+  MR-LSTM     epochs  58.0  train   409.5  val   85.3  test  0.90  total   498.9 s  (recorded 563)
+  LSTM        epochs  46.0  train   320.4  val   50.5  test  0.68  total   374.8 s  (recorded 412)
+  XGBoost     epochs   0.0  train  2807.0  val    nan  test  0.49  total  2810.6 s  (recorded 3051)
+  AttnBiLSTM  epochs  52.0  train   749.0  val  100.8  test  1.04  total   854.1 s  (recorded 931)
+
+written: results/timing_breakdown.csv
+
+  columns: prep_s and test_s are MEASURED; train_s and val_s are the
+  measured per-epoch cost scaled by the recorded epoch count; recorded_s is
+  the original per-fold wall time covering all of the above plus scoring.

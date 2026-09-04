@@ -197,8 +197,44 @@ def make_calendar(frame: pd.DataFrame, horizons: int = STEPS_PER_DAY) -> np.ndar
     return cal
 
 
+MARKET_TZ = "Europe/Vienna"     # delivery-day calendar of the day-ahead auction
+PUBLISH_LOCAL_HOUR = 13         # SDAC results are public ~12:55 local on D-1
+
+
+def da_published_mask(stamps: pd.DatetimeIndex, horizons: int = STEPS_PER_DAY) -> np.ndarray:
+    """(N, horizons) bool -- was the day-ahead price for t+h public at origin t?
+
+    The day-ahead auction for delivery day D clears at 12:00 local on D-1 and results
+    are published shortly after. So at an origin before ~13:00 local, tomorrow's prices
+    do not exist yet, and any horizon reaching into tomorrow is unknowable.
+
+    Without this, `make_da_future` hands the model 14.95% of its day-ahead cells from
+    the future: every origin between 00:00 and 12:45 local (54.17% of all origins) and
+    every horizon from h=45 upward, rising to 54.17% of origins at h=96. See
+    `audit_gate_closure.py` for the measurement.
+    """
+    # Day arithmetic on naive wall-clock, then re-localize: adding a Timedelta to a
+    # tz-aware index is absolute, which lands an hour off on the two DST days.
+    local_naive = stamps.tz_convert(MARKET_TZ).tz_localize(None)
+    pub_naive = (local_naive.normalize() - pd.Timedelta(days=1)
+                 + pd.Timedelta(hours=PUBLISH_LOCAL_HOUR))
+    pub = (pd.DatetimeIndex(pub_naive)
+           .tz_localize(MARKET_TZ, nonexistent="shift_forward", ambiguous=True)
+           .tz_convert("UTC").to_numpy())
+    origin = stamps.to_numpy()
+
+    n = len(stamps)
+    known = np.ones((n, horizons), dtype=bool)
+    for h in range(1, horizons + 1):
+        tgt = np.arange(n) + h
+        ok = tgt < n
+        known[ok, h - 1] = pub[tgt[ok]] <= origin[ok]
+    return known
+
+
 def make_da_future(raw_frame: pd.DataFrame, shifted_frame: pd.DataFrame,
-                   horizons: int = STEPS_PER_DAY, da_col: str = DA_COL) -> np.ndarray:
+                   horizons: int = STEPS_PER_DAY, da_col: str = DA_COL,
+                   gate_closure: bool = True) -> np.ndarray:
     """(N, horizons, 2) -- day-ahead price at t+h, plus an 'is published' flag.
 
     The day-ahead price is the one input genuinely known a day in advance, so it is
@@ -209,6 +245,11 @@ def make_da_future(raw_frame: pd.DataFrame, shifted_frame: pd.DataFrame,
     published -- including every row from 2025-10-28 to the end of the record, 6,141
     intervals -- and a zero price is not the same as a missing one. Without the flag
     the model would learn that day-ahead is sometimes exactly zero.
+
+    `gate_closure=True` additionally blanks prices that had not yet been auctioned at
+    the origin instant (see `da_published_mask`). This is the honest setting and is the
+    default. `gate_closure=False` reproduces the leaky behaviour that produced every
+    result in `results/` up to 2026-08-29 -- keep it only for reproducing those.
     """
     s_da = raw_frame[da_col]
     lead = np.column_stack([s_da.shift(-h).to_numpy(dtype="float32")
@@ -223,6 +264,17 @@ def make_da_future(raw_frame: pd.DataFrame, shifted_frame: pd.DataFrame,
 
     present = np.where(np.isnan(lead), 0.0, (lead != 0.0)).astype("float32")
     lead = np.nan_to_num(lead, nan=0.0)
+
+    if gate_closure:
+        stamps = pd.DatetimeIndex(shifted_frame[TIME_COL])
+        if stamps.tz is None:
+            stamps = stamps.tz_localize("UTC")
+        known = da_published_mask(stamps, horizons)
+        # Blank the price as well as the flag: an unpublished price must reach the
+        # model as "missing", which is exactly the state DAOutageDropout trains for.
+        present = present * known
+        lead = lead * known
+
     return np.stack([lead, present], axis=-1)
 
 
@@ -246,7 +298,8 @@ def to_inputs(frame: pd.DataFrame, lags: Sequence[int], kind: str) -> List[np.nd
 
 
 def build_dataset(raw_frame, shifted_frame, scaled_frame, lags, kind, y_scaler,
-                  target_col="imbalance_price", horizons=STEPS_PER_DAY, stride=1):
+                  target_col="imbalance_price", horizons=STEPS_PER_DAY, stride=1,
+                  gate_closure=True):
     """Assemble (inputs, targets, timestamps) for one split.
 
     The final `horizons` rows are dropped: their future targets do not exist.
@@ -256,7 +309,7 @@ def build_dataset(raw_frame, shifted_frame, scaled_frame, lags, kind, y_scaler,
     evaluation.
     """
     tgt = make_multihorizon_targets(shifted_frame, target_col, horizons)
-    da = make_da_future(raw_frame, shifted_frame, horizons)
+    da = make_da_future(raw_frame, shifted_frame, horizons, gate_closure=gate_closure)
     cal = make_calendar(shifted_frame, horizons)
     hist = to_inputs(scaled_frame, lags, kind)
     stamps = pd.DatetimeIndex(shifted_frame[TIME_COL]).to_numpy()
@@ -563,7 +616,30 @@ def summarise(per_h: pd.DataFrame) -> Dict[str, float]:
     }
 
 
-def seasonal_naive(y_true_scaled, stamps, y_scaler, quantiles=QUANTILES):
+def climatology(y_true_scaled, y_scaler, quantiles=QUANTILES, reference=None):
+    """The unconditional baseline: the same quantiles at every horizon, forever.
+
+    This is the reference the project was missing. Seasonal naive turns out to be a
+    *weak* baseline here -- its RMSE of 549 is about sqrt(2) x the price standard
+    deviation of 390, the signature of differencing two nearly independent draws, so
+    it loses to simply predicting the mean. Beating it by 32% therefore overstates
+    the result; the honest comparison is against a constant, which the models beat by
+    roughly 12% on MAE while matching its RMSE almost exactly.
+
+    `reference` is the sample the quantiles are read from and should be the TRAINING
+    prices. Passing None reads them from the test set itself, which is not a forecast
+    and is only useful as an upper bound on what any constant could achieve.
+    """
+    y = _inv(y_true_scaled, y_scaler)
+    src = y.ravel() if reference is None else np.asarray(reference).ravel()
+    src = src[~np.isnan(src)]
+    qs = np.quantile(src, list(quantiles))
+    pred = np.broadcast_to(qs, y.shape + (len(qs),)).copy()
+    return y, pred
+
+
+def seasonal_naive(y_true_scaled, stamps, y_scaler, quantiles=QUANTILES,
+                   resid_quantiles=None):
     """Price at the same interval yesterday -- the right baseline 24 hours out.
 
     Persistence (the one-step baseline) is meaningless here: the price 24 hours ago
@@ -589,8 +665,16 @@ def seasonal_naive(y_true_scaled, stamps, y_scaler, quantiles=QUANTILES):
         raise ValueError("no test row has a matching interval 24 hours earlier")
 
     base = y[np.where(ok, np.nan_to_num(prev, nan=0.0), 0).astype(int)]
-    resid = (y[ok] - base[ok]).ravel()
-    qs = np.quantile(resid, list(quantiles))
+    if resid_quantiles is None:
+        # In-sample: the interval width is fitted on the very rows being scored, which
+        # flatters the baseline by ~0.065 AQL. Conservative for the project's claim,
+        # but still not a forecast -- pass day-over-day residuals from the TRAINING
+        # split instead. Kept as the default only so existing callers stay reproducible.
+        qs = np.quantile((y[ok] - base[ok]).ravel(), list(quantiles))
+    else:
+        qs = np.asarray(resid_quantiles, dtype=float)
+        if qs.shape != (len(quantiles),):
+            raise ValueError(f"resid_quantiles must have {len(quantiles)} entries")
     pred = np.stack([base + q for q in qs], axis=-1)        # (N, Hz, Q)
     return y[ok], pred[ok], ok
 

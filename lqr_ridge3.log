@@ -1,0 +1,19 @@
+2026-08-30 06:06:34.203908: I tensorflow/core/util/port.cc:113] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+2026-08-30 06:06:34.204649: I external/local_tsl/tsl/cuda/cudart_stub.cc:32] Could not find cuda drivers on your machine, GPU will not be used.
+2026-08-30 06:06:34.208292: I external/local_tsl/tsl/cuda/cudart_stub.cc:32] Could not find cuda drivers on your machine, GPU will not be used.
+2026-08-30 06:06:34.220427: E external/local_xla/xla/stream_executor/cuda/cuda_fft.cc:479] Unable to register cuFFT factory: Attempting to register factory for plugin cuFFT when one has already been registered
+2026-08-30 06:06:34.239931: E external/local_xla/xla/stream_executor/cuda/cuda_dnn.cc:10575] Unable to register cuDNN factory: Attempting to register factory for plugin cuDNN when one has already been registered
+2026-08-30 06:06:34.239978: E external/local_xla/xla/stream_executor/cuda/cuda_blas.cc:1442] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered
+2026-08-30 06:06:34.251746: I tensorflow/core/platform/cpu_feature_guard.cc:210] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
+To enable the following instructions: AVX2 AVX_VNNI FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
+2026-08-30 06:06:35.151834: W tensorflow/compiler/tf2tensorrt/utils/py_utils.cc:38] TF-TRT Warning: Could not find TensorRT
+models   lqr
+recipe   T=32 stride=2 batch=256 lr=0.03 epochs<=6000 patience=25 da_drop=0.2 seed=42
+gate_closure=True  <- these numbers supersede the leaky runs
+
+  [skip] lqr roll0 -- already in benchmark_results.csv
+  [skip] lqr roll1 -- already in benchmark_results.csv
+  LQR         roll2  AQL  20.755  MAE  59.24  AQCR 15.75  p 538,080  ep 151/176    2.6 min
+  LQR         roll3  AQL  19.134  MAE  56.13  AQCR  3.34  p 538,080  ep 733/758   11.1 min
+
+total 0.23 h
