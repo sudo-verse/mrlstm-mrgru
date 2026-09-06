@@ -80,7 +80,7 @@ per signal f:
 
 ### One-Step Comparison (15 min ahead)
 
-Austrian balancing market, 15-min resolution. **AQCR = 0 everywhere** (structurally impossible quantile crossing from the hierarchical head).
+Austrian balancing market,15-min resolution. **AQCR = 0 everywhere** (structurally impossible quantile crossing from the hierarchical head).
 
 | Model | AQL ↓ | MAE ↓ | RMSE ↓ | Params |
 |---|---|---|---|---|
